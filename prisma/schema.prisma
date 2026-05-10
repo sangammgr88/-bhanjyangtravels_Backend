@@ -1,0 +1,167 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication only
+model User {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  email         String         @unique
+  name          String
+  password      String
+  role          UserRole       @default(USER)
+  refreshTokens RefreshToken[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Trek {
+  id              String      @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  slug            String      @unique
+  description     String?
+  overview        String?
+  duration        Int
+  difficulty      Difficulty?
+  maxAltitude     Int?
+  groupSize       String?
+  highlights      String[]
+  location        String?
+  region          String?
+  includes        String[]
+  itinerary       Itinerary[]
+  excludes        String[]
+  displayOrder    Int?        @default(1)
+  metaTitle       String?
+  metaDescription String?
+  keywords        String?
+  thumbnail       String?
+  images          String[]
+  isActive        Boolean     @default(true)
+  isFeatured      Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  enquiries       Enquiry[]
+}
+
+model Itinerary {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  trekId      String   @db.ObjectId
+  trek        Trek     @relation(fields: [trekId], references: [id], onDelete: Cascade)
+  day         String?
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Enquiry {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Personal Information
+  firstName   String
+  lastName    String?
+  email       String
+  phone       String?
+  nationality String?
+  age         Int?
+
+  // Trek Preferences
+  preferredTrek       String?
+  preferredDifficulty Difficulty?
+  preferredDuration   String?
+  groupSize           String?
+  budgetRange         String?
+
+  // Travel Dates
+  preferredArrivalDate   DateTime?
+  preferredDepartureDate DateTime?
+
+  // Additional Services
+  additionalServices String[]
+
+  // Trekking Experience
+  trekkingExperience String?
+
+  // Special Requirements or Questions
+  specialRequirements String?
+
+  // How did you hear about us?
+  heardFrom String?
+
+  // Optional relation to Trek
+  trekId String? @db.ObjectId
+  trek   Trek?   @relation(fields: [trekId], references: [id], onDelete: SetNull)
+}
+
+// Contact form submissions
+model Contact {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  name    String
+  email   String
+  phone   String?
+  subject String?
+  message String
+
+  // Status
+  status ContactStatus @default(UNREAD)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum Difficulty {
+  EASY
+  MODERATE
+  CHALLENGING
+}
+
+enum EnquiryStatus {
+  PENDING
+  CONTACTED
+  CONFIRMED
+  CANCELLED
+}
+
+enum ContactStatus {
+  UNREAD
+  READ
+  REPLIED
+  CLOSED
+}
+
+// enum AdditionalService {
+//   HOTEL
+//   AIRPORT
+//   EQUIPMENT
+//   PERMITS
+//   VEHICLE
+// }
+
+model RefreshToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  token     String   @unique
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
