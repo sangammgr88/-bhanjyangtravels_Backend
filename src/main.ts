@@ -9,8 +9,15 @@ import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
+  const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'ALLOWED_ORIGINS'];
+  requiredEnvVars.forEach((key) => {
+    if (!process.env[key]) {
+      throw new Error(`Missing required env var ${key}. Check .env and restart the app.`);
+    }
+  });
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',');
+  const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim());
   // Configure CORS for credentials
   app.enableCors({
     origin: function (origin, callback) {

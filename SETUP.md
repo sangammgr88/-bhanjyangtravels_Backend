@@ -47,12 +47,13 @@ Create a `.env` file in the root directory:
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
-# Database Configuration (if using Prisma)
-DATABASE_URL="postgresql://username:password@localhost:5432/travel_bhayang?schema=public"
+# Database Configuration (MongoDB via Prisma)
+DATABASE_URL="mongodb+srv://username:password@cluster0.example.mongodb.net/travel_bhayang?retryWrites=true&w=majority"
 
 # Application Configuration
 PORT=3000
 NODE_ENV=development
+ALLOWED_ORIGINS=http://localhost:3000
 ```
 
 ## API Endpoints
