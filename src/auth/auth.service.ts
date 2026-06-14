@@ -31,32 +31,55 @@ export class AuthService {
     return this.usersService.validateUser(email, password);
   }
 
-  async generateTokens(user: any) {
-    const payload = { email: user.email, sub: user.id, role: user.role };
-    const access_token = this.jwtService.sign(payload, { expiresIn: '15m' });
+async generateTokens(user: any) {
+  try {
+    console.log("START TOKEN");
+
+    const payload = {
+      email: user.email,
+      sub: user.id,
+      role: user.role,
+    };
+
+    const access_token = this.jwtService.sign(payload, {
+      expiresIn: '15m',
+    });
+
+    console.log("JWT CREATED");
+
     const refresh_token = uuidv4();
 
-    // Store refresh token in DB
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7); // 7 days
     await this.prisma.refreshToken.create({
       data: {
         token: refresh_token,
         userId: user.id,
-        expiresAt,
+        expiresAt: new Date(
+          Date.now() + 1000 * 60 * 60 * 24 * 7,
+        ),
       },
     });
 
-    return { access_token, refresh_token, expiresAt };
-  }
+    console.log("REFRESH TOKEN SAVED");
 
-  async login(loginDto: LoginDto): Promise<AuthResponse> {
-    const user = await this.validateUser(loginDto.email, loginDto.password);
-    
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    return { access_token, refresh_token };
+  } catch (error) {
+    console.error("GENERATE TOKEN ERROR:", error);
+    throw error;
+  }
+}
+
+ async login(loginDto: LoginDto): Promise<AuthResponse> {
+  try {
+    const user = await this.validateUser(
+      loginDto.email,
+      loginDto.password,
+    );
+
+    console.log("USER:", user);
 
     const tokens = await this.generateTokens(user);
+
+    console.log("TOKENS CREATED");
 
     return {
       access_token: tokens.access_token,
@@ -70,7 +93,11 @@ export class AuthService {
         updatedAt: user.updatedAt,
       },
     };
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
+    throw error;
   }
+}
 
   async register(createUserDto: CreateUserDto): Promise<AuthResponse> {
     const user = await this.usersService.create(createUserDto);

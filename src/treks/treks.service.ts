@@ -9,19 +9,19 @@ export class TreksService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(): Promise<Trek[]> {
-    return this.prisma.trek.findMany({
-      orderBy: { displayOrder: 'asc' },
-    });
+    const treks = await this.prisma.trek.findMany();
+    return this.sortByDisplayOrder(treks);
   }
 
   async findFeatured(): Promise<Trek[]> {
-    return this.prisma.trek.findMany({
+    const treks = await this.prisma.trek.findMany({
       where: {
         isActive: true,
         isFeatured: true,
       },
-      orderBy: { displayOrder: 'asc' },
     });
+
+    return this.sortByDisplayOrder(treks);
   }
 
   async findOne(id: string): Promise<Trek | null> {
@@ -131,7 +131,7 @@ export class TreksService {
   }
 
   async search(query: string): Promise<Trek[]> {
-    return this.prisma.trek.findMany({
+    const treks = await this.prisma.trek.findMany({
       where: {
         isActive: true,
         OR: [
@@ -141,7 +141,21 @@ export class TreksService {
           { region: { contains: query, mode: 'insensitive' } },
         ],
       },
-      orderBy: { displayOrder: 'asc' },
+    });
+
+    return this.sortByDisplayOrder(treks);
+  }
+
+  private sortByDisplayOrder(treks: Trek[]): Trek[] {
+    return [...treks].sort((first, second) => {
+      const firstOrder = first.displayOrder ?? Number.MAX_SAFE_INTEGER;
+      const secondOrder = second.displayOrder ?? Number.MAX_SAFE_INTEGER;
+
+      if (firstOrder !== secondOrder) {
+        return firstOrder - secondOrder;
+      }
+
+      return first.title.localeCompare(second.title);
     });
   }
 }

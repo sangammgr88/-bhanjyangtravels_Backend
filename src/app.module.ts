@@ -8,8 +8,9 @@ import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { EnquiriesModule } from './enquiries/enquiries.module';
 import { TreksModule } from './treks/treks.module';
-import { ContactsModule } from './contacts/contacts.module';
 import { UploadModule } from './upload/upload.module';
+import { ContactsModule } from './contacts/contacts.module';
+import { BlogsModule } from './blogs/blogs.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -18,14 +19,15 @@ import { RolesGuard } from './common/guards/roles.guard';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    CommonModule, 
-    PrismaModule, 
-    AuthModule, 
-    UsersModule, 
-    EnquiriesModule, 
-    TreksModule, 
-    ContactsModule,
+    CommonModule,
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    EnquiriesModule,
+    TreksModule,
     UploadModule,
+    ContactsModule,
+    BlogsModule,
   ],
   controllers: [AppController],
   providers: [
