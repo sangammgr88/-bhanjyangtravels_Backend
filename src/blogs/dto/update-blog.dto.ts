@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, MinLength, IsArray } from 'class-validator';
 
 export class UpdateBlogDto {
   @ApiProperty({ required: false, description: 'Blog title' })
@@ -27,4 +27,10 @@ export class UpdateBlogDto {
   @IsString({ message: 'Photo URL must be a string' })
   @MaxLength(500, { message: 'Photo URL cannot exceed 500 characters' })
   photo?: string;
+
+  @ApiProperty({ required: false, description: 'Array of additional image URLs', type: [String] })
+  @IsOptional()
+  @IsArray({ message: 'Images must be an array' })
+  @IsString({ each: true, message: 'Each image must be a string URL' })
+  images?: string[];
 }

@@ -16,6 +16,9 @@ export class BlogResponseDto {
   @ApiProperty({ required: false })
   photo?: string;
 
+  @ApiProperty({ required: false, type: [String] })
+  images?: string[];
+
   @ApiProperty()
   createdAt: Date;
 

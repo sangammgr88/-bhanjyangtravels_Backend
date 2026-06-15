@@ -50,6 +50,7 @@ export class BlogsService {
         slug: data.slug,
         description: data.description,
         photo: data.photo,
+        images: data.images || [],
       },
     });
   }
