@@ -31,7 +31,7 @@ export class UploadController {
   constructor(
     private readonly uploadService: UploadService,
     private readonly responseFormatter: ResponseFormatterService,
-  ) {}
+  ) { }
 
   @Post('image')
   @UseGuards(JwtAuthGuard)
