@@ -11,6 +11,7 @@ import { TreksModule } from './treks/treks.module';
 import { UploadModule } from './upload/upload.module';
 import { ContactsModule } from './contacts/contacts.module';
 import { BlogsModule } from './blogs/blogs.module';
+import { SiteVideosModule } from './site-videos/site-videos.module';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -28,6 +29,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     UploadModule,
     ContactsModule,
     BlogsModule,
+    SiteVideosModule,
   ],
   controllers: [AppController],
   providers: [
