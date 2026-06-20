@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -132,7 +133,11 @@ enum UserRole {
 enum Difficulty {
   EASY
   MODERATE
+  MEDIUM
   CHALLENGING
+  DIFFICULT
+  HARD
+  STRENUOUS
 }
 
 enum EnquiryStatus {
@@ -177,3 +182,13 @@ model Blog {
   updatedAt   DateTime @updatedAt
 }
 
+model SiteVideo {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  section   String   @unique
+  title     String
+  videoUrl  String
+  publicId  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

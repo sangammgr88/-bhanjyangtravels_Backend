@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Difficulty } from '@prisma/client';
 import {
   IsArray,
   IsDateString,
@@ -16,6 +15,7 @@ import {
   Max,
   IsIn,
 } from 'class-validator';
+import { Difficulty } from '../../common/enums/difficulty.enum';
 
 export class CreateEnquiryDto {
   @ApiProperty({ description: 'First name of the enquirer' })
@@ -65,6 +65,7 @@ export class CreateEnquiryDto {
   @IsOptional()
   @IsEnum(Difficulty, { message: 'Preferred difficulty must be a valid difficulty level' })
   preferredDifficulty?: Difficulty;
+
 
   @ApiProperty({ required: false, description: 'Preferred trek duration' })
   @IsOptional()

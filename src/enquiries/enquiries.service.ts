@@ -51,7 +51,7 @@ export class EnquiriesService {
 
   async create(data: CreateEnquiryDto) {
     try {
-      const { trekId, ...enquiryData } = data;
+      const { trekId, preferredDifficulty, ...enquiryData } = data;
 
       // Validate trekId if provided
       if (trekId && !this.isValidObjectId(trekId)) {
@@ -71,6 +71,7 @@ export class EnquiriesService {
       return await this.prisma.enquiry.create({
         data: {
           ...enquiryData,
+          ...(preferredDifficulty && { preferredDifficulty: preferredDifficulty as any }),
           ...(trekId && { trek: { connect: { id: trekId } } }),
         },
         include: {

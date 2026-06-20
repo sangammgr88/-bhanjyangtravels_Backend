@@ -11,7 +11,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node --max-old-space-size=512 dist/main",
+    "start:prod": "node --max-old-space-size=1024 dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -22,7 +22,9 @@
     "admin:generator": "ts-node -r tsconfig-paths/register src/scripts/admin-generator.ts",
     "admin:quick": "ts-node -r tsconfig-paths/register src/scripts/quick-admin.ts",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "prisma:seed:remove": "ts-node prisma/seed-remove.ts"
+    "prisma:seed:remove": "ts-node prisma/seed-remove.ts",
+    "postinstall": "",
+    "prisma:generate": "node ./node_modules/prisma/build/index.js generate"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

@@ -16,8 +16,13 @@ async function bootstrap() {
     }
   });
 
+  const port = process.env.PORT || 8000;
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim());
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
   // Configure CORS for credentials
   app.enableCors({
     origin: function (origin, callback) {
@@ -61,6 +66,6 @@ async function bootstrap() {
   );
   SwaggerModule.setup('api/docs', app, document);
 
-  await app.listen(process.env.PORT || 8000);
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();

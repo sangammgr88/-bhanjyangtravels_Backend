@@ -13,7 +13,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Difficulty } from '@prisma/client';
+import { Difficulty } from '../../common/enums/difficulty.enum';
 import { Type } from 'class-transformer';
 
 export class ItineraryItemDto {

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional, IsArray, IsBoolean, IsEnum, ValidateNested } from 'class-validator';
-import { Difficulty } from '@prisma/client';
+import { Difficulty } from '../../common/enums/difficulty.enum';
 import { Type } from 'class-transformer';
 
 export class ItineraryItemDto {

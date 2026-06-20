@@ -6,7 +6,7 @@ import { UpdateTrekDto } from './dto/update-trek.dto';
 
 @Injectable()
 export class TreksService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async findAll(): Promise<Trek[]> {
     const treks = await this.prisma.trek.findMany();
@@ -17,11 +17,10 @@ export class TreksService {
     const treks = await this.prisma.trek.findMany({
       where: {
         isActive: true,
-        isFeatured: true,
       },
     });
 
-    return this.sortByDisplayOrder(treks);
+    return treks;
   }
 
   async findOne(id: string): Promise<Trek | null> {
