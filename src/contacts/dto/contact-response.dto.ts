@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ContactStatus } from '@prisma/client';
+import { ContactStatus } from '../schemas/contact.schema';
 
 export class ContactResponseDto {
   @ApiProperty()

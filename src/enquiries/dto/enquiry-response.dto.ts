@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Difficulty } from '@prisma/client';
+import { Difficulty } from '../../treks/schemas/trek.schema';
 
 export class EnquiryResponseDto {
   @ApiProperty()

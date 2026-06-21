@@ -1,20 +1,30 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Contact, ContactDocument, ContactStatus } from './schemas/contact.schema';
 
 @Injectable()
 export class ContactsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(@InjectModel(Contact.name) private contactModel: Model<ContactDocument>) {}
+
+  private mapContactOutput(contact: any) {
+    if (!contact) return null;
+    return {
+      ...contact,
+      id: contact._id?.toString(),
+      _id: undefined,
+    };
+  }
 
   async findAll() {
-    return this.prisma.contact.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    const contacts = await this.contactModel.find().sort({ createdAt: -1 }).lean().exec();
+    return contacts.map(c => this.mapContactOutput(c));
   }
 
   async findOne(id: string) {
-    return this.prisma.contact.findUnique({
-      where: { id },
-    });
+    const contact = await this.contactModel.findById(id).lean().exec();
+    if (!contact) throw new NotFoundException('Contact not found');
+    return this.mapContactOutput(contact);
   }
 
   async create(data: {
@@ -24,28 +34,25 @@ export class ContactsService {
     subject?: string;
     message: string;
   }) {
-    return this.prisma.contact.create({
-      data,
-    });
+    const newContact = new this.contactModel(data);
+    const saved = await newContact.save();
+    return this.mapContactOutput(saved.toObject());
   }
 
   async updateStatus(id: string, status: string) {
-    return this.prisma.contact.update({
-      where: { id },
-      data: { status: status as any },
-    });
+    const contact = await this.contactModel.findByIdAndUpdate(id, { status }, { new: true }).lean().exec();
+    if (!contact) throw new NotFoundException('Contact not found');
+    return this.mapContactOutput(contact);
   }
 
   async delete(id: string) {
-    return this.prisma.contact.delete({
-      where: { id },
-    });
+    const contact = await this.contactModel.findByIdAndDelete(id).lean().exec();
+    if (!contact) throw new NotFoundException('Contact not found');
+    return this.mapContactOutput(contact);
   }
 
   async findUnread() {
-    return this.prisma.contact.findMany({
-      where: { status: 'UNREAD' },
-      orderBy: { createdAt: 'desc' },
-    });
+    const contacts = await this.contactModel.find({ status: ContactStatus.UNREAD }).sort({ createdAt: -1 }).lean().exec();
+    return contacts.map(c => this.mapContactOutput(c));
   }
-} 
+}

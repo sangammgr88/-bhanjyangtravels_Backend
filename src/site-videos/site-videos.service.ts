@@ -1,16 +1,17 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import { Readable } from 'stream';
-import { SiteVideo } from '@prisma/client';
+import { SiteVideo, SiteVideoDocument } from './schemas/site-video.schema';
 
 @Injectable()
 export class SiteVideosService {
   private isConfigured = false;
 
   constructor(
-    private prisma: PrismaService,
+    @InjectModel(SiteVideo.name) private siteVideoModel: Model<SiteVideoDocument>,
     private configService: ConfigService,
   ) {
     this.configureCloudinary();
@@ -39,7 +40,8 @@ export class SiteVideosService {
     const apiSecret = this.configService.get<string>('CLOUDINARY_API_SECRET')?.trim();
 
     if (!cloudName || !apiKey || !apiSecret) {
-      throw new BadRequestException('Cloudinary is not configured.');
+      console.warn('Cloudinary is not configured.');
+      return;
     }
 
     cloudinary.config({
@@ -101,28 +103,34 @@ export class SiteVideosService {
     }
   }
 
-  async findAll(): Promise<SiteVideo[]> {
-    return this.prisma.siteVideo.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+  private mapOutput(video: any) {
+    if (!video) return null;
+    return {
+      ...video,
+      id: video._id?.toString(),
+      _id: undefined,
+    };
   }
 
-  async findBySection(section: string): Promise<SiteVideo | null> {
-    return this.prisma.siteVideo.findUnique({
-      where: { section },
-    });
+  async findAll() {
+    const videos = await this.siteVideoModel.find().sort({ createdAt: -1 }).lean().exec();
+    return videos.map(v => this.mapOutput(v));
+  }
+
+  async findBySection(section: string) {
+    const video = await this.siteVideoModel.findOne({ section }).lean().exec();
+    return this.mapOutput(video);
   }
 
   async upsert(
     section: string,
     title: string | undefined,
     file: Express.Multer.File,
-  ): Promise<SiteVideo> {
+  ) {
     if (!file) {
       throw new BadRequestException('No video file uploaded');
     }
 
-    // Validate file type
     const allowedMimeTypes = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
@@ -130,59 +138,45 @@ export class SiteVideosService {
       );
     }
 
-    // Validate file size (100MB max for videos)
     const maxSize = 100 * 1024 * 1024;
     if (file.size > maxSize) {
       throw new BadRequestException('File too large. Maximum size is 100MB.');
     }
 
-    // Check if a video already exists for this section
-    const existing = await this.prisma.siteVideo.findUnique({
-      where: { section },
-    });
+    const existing = await this.siteVideoModel.findOne({ section }).exec();
 
-    // Delete old video from Cloudinary if replacing
     if (existing) {
       await this.deleteVideoFromCloudinary(existing.publicId);
     }
 
-    // Upload new video to Cloudinary
     const uploaded = await this.uploadVideoToCloudinary(file);
 
-    // Upsert the database record
-    return this.prisma.siteVideo.upsert({
-      where: { section },
-      update: {
-        title: title || existing?.title || section,
-        videoUrl: uploaded.secure_url,
-        publicId: uploaded.public_id,
-        isActive: true,
-      },
-      create: {
-        section,
-        title: title || section,
-        videoUrl: uploaded.secure_url,
-        publicId: uploaded.public_id,
-        isActive: true,
-      },
-    });
+    const updateData = {
+      section,
+      title: title || existing?.title || section,
+      videoUrl: uploaded.secure_url,
+      publicId: uploaded.public_id,
+      isActive: true,
+    };
+
+    const updated = await this.siteVideoModel.findOneAndUpdate(
+      { section },
+      updateData,
+      { new: true, upsert: true }
+    ).lean().exec();
+
+    return this.mapOutput(updated);
   }
 
-  async delete(section: string): Promise<SiteVideo> {
-    const video = await this.prisma.siteVideo.findUnique({
-      where: { section },
-    });
+  async delete(section: string) {
+    const video = await this.siteVideoModel.findOneAndDelete({ section }).lean().exec();
 
     if (!video) {
       throw new NotFoundException(`No video found for section "${section}"`);
     }
 
-    // Delete from Cloudinary
     await this.deleteVideoFromCloudinary(video.publicId);
 
-    // Delete from database
-    return this.prisma.siteVideo.delete({
-      where: { section },
-    });
+    return this.mapOutput(video);
   }
 }
