@@ -14,30 +14,8 @@ export class TreksService {
     return '-overview -description -itinerary -includes -excludes -highlights';
   }
 
-  async findAll(): Promise<Trek[]> {
-    const treks = await this.trekModel.find()
-      .select(this.getListSelectFields())
-      .lean()
-      .exec();
-    return this.sortByDisplayOrder(treks as unknown as Trek[]);
-  }
-
-  async findFeatured(): Promise<Trek[]> {
-    const treks = await this.trekModel.find({ isActive: true, isFeatured: true })
-      .select(this.getListSelectFields())
-      .lean()
-      .exec();
-    return treks as unknown as Trek[];
-  }
-
-  async findOne(id: string): Promise<Trek | null> {
-    const trek = await this.trekModel.findById(id).lean().exec();
-    if (!trek) {
-      throw new NotFoundException(`Trek with ID ${id} not found`);
-    }
-    // format embedded id manually since lean bypasses getters if we want exact compatibility,
-    // but the subschema's virtual transform will handle it if we do toJSON at the controller level.
-    // Since lean() returns _id for subdocuments, let's map it manually for max compatibility.
+  private mapTrekOutput(trek: any): Trek | null {
+    if (!trek) return null;
     if (trek.itinerary) {
       trek.itinerary = trek.itinerary.map((item: any) => ({
         ...item,
@@ -45,22 +23,41 @@ export class TreksService {
         _id: undefined
       }));
     }
-    return { ...trek, id: trek._id?.toString(), _id: undefined } as unknown as Trek;
+    return {
+      ...trek,
+      id: trek._id?.toString(),
+      _id: undefined
+    } as unknown as Trek;
+  }
+
+  async findAll(): Promise<Trek[]> {
+    const treks = await this.trekModel.find()
+      .select(this.getListSelectFields())
+      .lean()
+      .exec();
+    const mappedTreks = treks.map(t => this.mapTrekOutput(t)).filter(Boolean) as Trek[];
+    return this.sortByDisplayOrder(mappedTreks);
+  }
+
+  async findFeatured(): Promise<Trek[]> {
+    const treks = await this.trekModel.find({ isActive: true, isFeatured: true })
+      .select(this.getListSelectFields())
+      .lean()
+      .exec();
+    return treks.map(t => this.mapTrekOutput(t)).filter(Boolean) as Trek[];
+  }
+
+  async findOne(id: string): Promise<Trek | null> {
+    const trek = await this.trekModel.findById(id).lean().exec();
+    if (!trek) {
+      throw new NotFoundException(`Trek with ID ${id} not found`);
+    }
+    return this.mapTrekOutput(trek);
   }
 
   async findBySlug(slug: string): Promise<Trek | null> {
     const trek = await this.trekModel.findOne({ slug }).lean().exec();
-    if (trek && trek.itinerary) {
-      trek.itinerary = trek.itinerary.map((item: any) => ({
-        ...item,
-        id: item._id?.toString(),
-        _id: undefined
-      }));
-    }
-    if(trek) {
-      return { ...trek, id: trek._id?.toString(), _id: undefined } as unknown as Trek;
-    }
-    return null;
+    return this.mapTrekOutput(trek);
   }
 
   async create(data: CreateTrekDto): Promise<Trek> {
@@ -94,7 +91,7 @@ export class TreksService {
     });
 
     const savedTrek = await newTrek.save();
-    return savedTrek.toObject() as unknown as Trek;
+    return this.mapTrekOutput(savedTrek.toObject()) as Trek;
   }
 
   async update(id: string, data: Partial<UpdateTrekDto>): Promise<Trek> {
@@ -115,15 +112,7 @@ export class TreksService {
       throw new NotFoundException(`Trek with ID ${id} not found`);
     }
 
-    if (updatedTrek.itinerary) {
-      updatedTrek.itinerary = updatedTrek.itinerary.map((item: any) => ({
-        ...item,
-        id: item._id?.toString(),
-        _id: undefined
-      }));
-    }
-
-    return { ...updatedTrek, id: updatedTrek._id?.toString(), _id: undefined } as unknown as Trek;
+    return this.mapTrekOutput(updatedTrek) as Trek;
   }
 
   async delete(id: string): Promise<Trek> {
@@ -131,7 +120,7 @@ export class TreksService {
     if (!deletedTrek) {
       throw new NotFoundException(`Trek with ID ${id} not found`);
     }
-    return { ...deletedTrek, id: deletedTrek._id?.toString(), _id: undefined } as unknown as Trek;
+    return this.mapTrekOutput(deletedTrek) as Trek;
   }
 
   async search(query: string): Promise<Trek[]> {
@@ -148,7 +137,8 @@ export class TreksService {
       .lean()
       .exec();
 
-    return this.sortByDisplayOrder(treks as unknown as Trek[]);
+    const mappedTreks = treks.map(t => this.mapTrekOutput(t)).filter(Boolean) as Trek[];
+    return this.sortByDisplayOrder(mappedTreks);
   }
 
   private sortByDisplayOrder(treks: Trek[]): Trek[] {
